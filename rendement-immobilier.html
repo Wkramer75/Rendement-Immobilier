@@ -16,9 +16,8 @@
     --accent:#1B7A57; --accent-2:#22936A; --accent-soft:#E7F1EA; --amber:#B4873A;
     --mono:ui-monospace,"SF Mono","Cascadia Mono",Menlo,Consolas,monospace;
     --sans:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
-    --serif:Georgia,"Iowan Old Style","Times New Roman",serif;
-    --radius:12px;
-    --shadow:0 1px 2px rgba(16,58,44,.05), 0 8px 24px -12px rgba(16,58,44,.16);
+    --radius:14px;
+    --shadow:0 1px 2px rgba(16,58,44,.04), 0 6px 18px -10px rgba(16,58,44,.14);
     --shadow-lg:0 20px 48px -20px rgba(16,58,44,.30);
   }
   *{box-sizing:border-box;}
@@ -33,7 +32,7 @@
     position:sticky; top:0; z-index:20;}
   .brand{display:flex; align-items:center; gap:14px;}
   .brand .glyph{font-size:27px; color:var(--brass-2); line-height:1;}
-  .brand .wordmark{font-family:var(--serif); font-size:23px; font-weight:600; line-height:1; letter-spacing:.005em;}
+  .brand .wordmark{font-family:var(--sans); font-size:21px; font-weight:700; line-height:1; letter-spacing:-.01em;}
   .brand .tagline{font-size:12px; color:#A8C0B5; margin-top:3px; letter-spacing:.01em;}
   header.top .sub{margin-left:auto; font-size:12px; color:#8FB0A2; font-family:var(--mono);}
   @media(max-width:960px){ header.top{position:static;} header.top .sub{display:none;} }
@@ -100,8 +99,9 @@
   .actions{display:flex; gap:10px; margin-bottom:18px; flex-wrap:wrap;}
   .btn{font-family:var(--sans); font-size:13px; font-weight:600; cursor:pointer;
     border:1px solid var(--line); background:var(--panel); color:var(--ink);
-    padding:9px 16px; border-radius:9px; transition:.15s;}
+    padding:9px 16px; border-radius:10px; transition:border-color .15s, color .15s, background .15s, transform .1s;}
   .btn:hover{border-color:var(--emerald); color:var(--emerald);}
+  .btn:active{transform:scale(.97);}
   .btn.primary{background:var(--emerald); border-color:var(--emerald); color:#fff;}
   .btn.primary:hover{background:var(--emerald-2); border-color:var(--emerald-2); color:#fff;}
 
@@ -152,9 +152,23 @@
   .chart-tip .tt-year{font-family:var(--mono); color:var(--brass-2); font-weight:600; margin-bottom:2px;}
   .chart-tip .tt-row{font-family:var(--mono); font-variant-numeric:tabular-nums; color:#CFE0D8;}
   .chart-tip .tt-row b{color:#fff; font-weight:600;}
-  .legend{display:flex; gap:18px; flex-wrap:wrap; margin-top:12px; font-size:12.5px; color:var(--ink-soft);}
-  .legend .lg{display:flex; align-items:center; gap:7px;}
-  .legend .sw{width:14px; height:3px; border-radius:2px;}
+  /* --- Projection multi-régimes --- */
+  .proj-controls{display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:10px 16px; margin:2px 0 16px;}
+  .metric-toggle{display:inline-flex; gap:2px; background:var(--line-soft); padding:3px; border-radius:9px; flex:none;}
+  .metric-toggle button{border:none; background:transparent; font-family:var(--sans); font-weight:600; font-size:12.5px;
+    color:var(--ink-soft); padding:7px 14px; border-radius:7px; cursor:pointer; transition:.15s;}
+  .metric-toggle button:hover{color:var(--emerald);}
+  .metric-toggle button.active{background:var(--panel); color:var(--emerald); box-shadow:var(--shadow);}
+  .regime-legend{display:flex; flex-wrap:wrap; gap:6px;}
+  .rchip{display:inline-flex; align-items:center; gap:7px; padding:6px 12px 6px 10px; border-radius:99px;
+    border:1px solid var(--line); background:var(--panel); cursor:pointer; font-size:12px; font-weight:600;
+    color:var(--muted); transition:.15s; user-select:none;}
+  .rchip:hover{border-color:var(--ink-soft); color:var(--ink-soft);}
+  .rchip input{position:absolute; opacity:0; width:0; height:0;}
+  .rchip .dot{width:9px; height:9px; border-radius:50%; flex:none; opacity:.45; transition:.15s;}
+  .rchip.checked{color:var(--ink); border-color:var(--rc,var(--line));}
+  .rchip.checked .dot{opacity:1;}
+  .chart-tip .tt-dot{display:inline-block; width:7px; height:7px; border-radius:50%; margin-right:5px; vertical-align:middle;}
 
   table.breakdown{width:100%; border-collapse:collapse; font-size:13.5px;}
   table.breakdown td{padding:7px 0; border-bottom:1px solid var(--line-soft);}
@@ -332,13 +346,16 @@
 
     <div data-tabpanel="projection" style="display:none">
     <div class="card">
-      <h3>Projection sur la durée de détention</h3>
+      <h3>Projection dans le temps</h3>
       <p class="csub" id="proj-sub"></p>
-      <div id="chart-proj"></div>
-      <div class="legend">
-        <span class="lg"><span class="sw" style="background:var(--emerald)"></span>Patrimoine net (valeur − capital dû)</span>
-        <span class="lg"><span class="sw" style="background:var(--brass)"></span>Cash-flow cumulé après impôt</span>
+      <div class="proj-controls">
+        <div class="metric-toggle" id="metric-toggle">
+          <button type="button" class="active" data-metric="patrimoine">Patrimoine net</button>
+          <button type="button" data-metric="cashflow">Cash-flow cumulé</button>
+        </div>
+        <div class="regime-legend" id="regime-legend"></div>
       </div>
+      <div id="chart-proj"></div>
     </div>
     </div><!-- /projection -->
 
@@ -401,6 +418,7 @@ const DEFAULTS = {
   dureeDetention:15, appreciation:1.5, valeurReventeOverride:0, fraisReventePct:6,
   reintegrationAmort:true,
   comptaYear:1,
+  projMetric:"patrimoine", projRegimes:[],
 };
 
 const REGIMES = {
@@ -409,6 +427,9 @@ const REGIMES = {
   lmnp_micro: {nom:"LMNP · Micro-BIC",    desc:"Abattement 50 %",                   meuble:true},
   lmnp_reel:  {nom:"LMNP · Réel",         desc:"Charges + amortissements",          meuble:true},
   sci_is:     {nom:"SCI à l'IS",          desc:"Amortissements, IS 15/25 %",        meuble:false},
+};
+const REGIME_COLORS = {
+  nu_micro:"#8C978F", nu_reel:"#2F6FED", lmnp_micro:"#C79A4B", lmnp_reel:"#1B7A57", sci_is:"#A0459B",
 };
 
 /* =========================================================================
@@ -647,7 +668,8 @@ function compute(s){
     const amortMobK = meubleK ? ameubK/Math.max(1,s.amortMobilierDuree) : 0;
     const pr = projectRegime(s, rk, {sched:schedK, chargesFixes, gestionPct:s.gestionPct, gliPct:s.gliPct,
       loyerBrutAnnuel, occupancy, amortBien, amortTravaux, amortMobilier:amortMobK, coutTotal:coutK, fraisNotaire});
-    regimeResults[rk]={tri:pr.tri, cfCumulAI:pr.cfCumulAI[pr.cfCumulAI.length-1], netRevente:pr.netRevente};
+    regimeResults[rk]={tri:pr.tri, cfCumulAI:pr.cfCumulAI[pr.cfCumulAI.length-1], netRevente:pr.netRevente,
+      years:pr.years, patrimoine:pr.patrimoine, cfCumulSeries:pr.cfCumulAI};
   }
 
   return {
@@ -900,11 +922,16 @@ function render(){
     kpiCard({label:"Rendement brut", val:pct(c.rendementBrut), sub:`sur le coût total`})+
     kpiCard({label:"Rendement net", val:pct(c.rendementNet), sub:`après charges, avant impôt`});
 
-  // ---- Chart projection ----
-  document.getElementById("proj-sub").innerHTML =
-    `${REGIMES[state.regime].nom} · loyer +${state.revalLoyer.toString().replace('.',',')} %/an · bien +${state.appreciation.toString().replace('.',',')} %/an`;
-  document.getElementById("chart-proj").innerHTML = chartProjection(c.proj);
+  // ---- Chart projection (multi-régimes) ----
+  const metric = state.projMetric||"patrimoine";
+  const selRegimes = (state.projRegimes&&state.projRegimes.length) ? state.projRegimes : [state.regime];
+  document.getElementById("proj-sub").innerHTML = metric==="patrimoine"
+    ? "Patrimoine net = valeur du bien réévaluée − capital restant dû, année par année."
+    : "Cash-flow cumulé après impôt, encaissé depuis l'achat, année par année.";
+  document.querySelectorAll('#metric-toggle button').forEach(b=>b.classList.toggle('active', b.dataset.metric===metric));
+  document.getElementById("chart-proj").innerHTML = chartMultiProjection(c, selRegimes, metric);
   attachProjTooltip();
+  renderRegimeLegend(selRegimes);
 
   // ---- Comparaison régimes ----
   renderRegimeCompare(c);
@@ -972,23 +999,27 @@ function renderBreakdown(c){
 }
 
 /* =========================================================================
-   GRAPHIQUE SVG (fait main, sans dépendance)
+   GRAPHIQUE SVG (fait main, sans dépendance) — comparaison multi-régimes
    ========================================================================= */
 let projCtx=null;
-function chartProjection(proj){
-  const W=660,H=290,padL=58,padR=18,padT=18,padB=32;
-  const N=proj.years.length;
-  const patr=proj.patrimoine, cf=proj.cfCumulAI;
-  const allVals=[...patr,...cf,0];
+function chartMultiProjection(c, selRegimes, metric){
+  const W=640,H=220,padL=54,padR=14,padT=14,padB=26;
+  const N=c.N;
+  const years=Array.from({length:N},(_,i)=>i+1);
+  const series=selRegimes.map(k=>({
+    key:k, nom:REGIMES[k].nom, color:REGIME_COLORS[k],
+    values: metric==="patrimoine" ? c.regimeResults[k].patrimoine : c.regimeResults[k].cfCumulSeries,
+  }));
+  const allVals=series.flatMap(s=>s.values).concat([0]);
   let vmin=Math.min(...allVals), vmax=Math.max(...allVals);
   if(vmin===vmax){vmax+=1;vmin-=1;}
-  const padV=(vmax-vmin)*0.10; vmax+=padV; vmin-=padV;
+  const padV=(vmax-vmin)*0.12; vmax+=padV; vmin-=padV;
   const x=i=> padL+(N<=1?0:(i/(N-1))*(W-padL-padR));
   const y=v=> padT+(1-(v-vmin)/(vmax-vmin))*(H-padT-padB);
-  projCtx={proj,W,H,padL,padR,padT,padB,N,x,y};
+  projCtx={years,series,W,H,padL,padR,padT,padB,N,x,y};
 
   let grid="", ylabels="";
-  const nTicks=5;
+  const nTicks=4;
   for(let i=0;i<=nTicks;i++){
     const v=vmin+(vmax-vmin)*i/nTicks; const yy=y(v);
     grid+=`<line x1="${padL}" y1="${yy}" x2="${W-padR}" y2="${yy}" stroke="var(--line)" stroke-width="1"/>`;
@@ -1000,31 +1031,29 @@ function chartProjection(proj){
   let xlabels="";
   const step=N>10?Math.ceil(N/8):1;
   for(let i=0;i<N;i+=step){
-    xlabels+=`<text x="${x(i)}" y="${H-9}" text-anchor="middle" font-size="10" fill="var(--muted)" font-family="var(--mono)">A${proj.years[i]}</text>`;
+    xlabels+=`<text x="${x(i)}" y="${H-7}" text-anchor="middle" font-size="10" fill="var(--muted)" font-family="var(--mono)">A${years[i]}</text>`;
   }
 
-  const patrLine=patr.map((v,i)=>`${x(i)},${y(v)}`).join(" ");
-  const cfLine=cf.map((v,i)=>`${x(i)},${y(v)}`).join(" ");
+  const single=series.length===1;
   const areaBottom=zeroY!==null?zeroY:y(vmin);
-  const patrArea=`M ${x(0)},${areaBottom} L ${patr.map((v,i)=>`${x(i)},${y(v)}`).join(" L ")} L ${x(N-1)},${areaBottom} Z`;
+  let paths="", dots="";
+  series.forEach(s=>{
+    const pts=s.values.map((v,i)=>`${x(i)},${y(v)}`).join(" ");
+    if(single){
+      const area=`M ${x(0)},${areaBottom} L ${pts.split(" ").join(" L ")} L ${x(N-1)},${areaBottom} Z`;
+      paths+=`<path d="${area}" fill="${s.color}" opacity="0.10"/>`;
+    }
+    paths+=`<polyline points="${pts}" fill="none" stroke="${s.color}" stroke-width="2.3" stroke-linejoin="round" stroke-linecap="round"/>`;
+    dots+=`<circle cx="${x(N-1)}" cy="${y(s.values[N-1])}" r="3.5" fill="${s.color}" stroke="#fff" stroke-width="1.5"/>`;
+  });
+  const crossDots=series.map((s,si)=>`<circle id="ch-d${si}" r="4.5" fill="${s.color}" stroke="#fff" stroke-width="2"/>`).join("");
 
-  const svg=`<svg viewBox="0 0 ${W} ${H}" class="chart-svg" id="ch-svg" role="img" aria-label="Projection patrimoine et cash-flow">
-    <defs>
-      <linearGradient id="pg" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0" stop-color="var(--emerald)" stop-opacity="0.18"/>
-        <stop offset="1" stop-color="var(--emerald)" stop-opacity="0.01"/>
-      </linearGradient>
-    </defs>
+  const svg=`<svg viewBox="0 0 ${W} ${H}" class="chart-svg" id="ch-svg" role="img" aria-label="Projection comparée par régime">
     ${grid}${zeroLine}${ylabels}${xlabels}
-    <path d="${patrArea}" fill="url(#pg)"/>
-    <polyline points="${patrLine}" fill="none" stroke="var(--emerald)" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"/>
-    <polyline points="${cfLine}" fill="none" stroke="var(--brass)" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"/>
-    <circle cx="${x(N-1)}" cy="${y(patr[N-1])}" r="3.5" fill="var(--emerald)"/>
-    <circle cx="${x(N-1)}" cy="${y(cf[N-1])}" r="3.5" fill="var(--brass)"/>
+    ${paths}${dots}
     <g id="ch-cross" style="opacity:0; transition:opacity .1s">
-      <line id="ch-line" x1="0" y1="${padT}" x2="0" y2="${H-padB}" stroke="var(--brass)" stroke-width="1" stroke-dasharray="3 3"/>
-      <circle id="ch-dp" r="5" fill="var(--emerald)" stroke="#fff" stroke-width="2"/>
-      <circle id="ch-dc" r="5" fill="var(--brass)" stroke="#fff" stroke-width="2"/>
+      <line id="ch-line" x1="0" y1="${padT}" x2="0" y2="${H-padB}" stroke="var(--ink-soft)" stroke-width="1" stroke-dasharray="3 3"/>
+      ${crossDots}
     </g>
   </svg>`;
   return `<div class="chart-holder" id="ch-holder">${svg}<div class="chart-tip" id="ch-tip"></div></div>`;
@@ -1037,30 +1066,51 @@ function attachProjTooltip(){
   const tip=document.getElementById('ch-tip');
   const cross=document.getElementById('ch-cross');
   const line=document.getElementById('ch-line');
-  const dp=document.getElementById('ch-dp');
-  const dc=document.getElementById('ch-dc');
   if(!holder||!svg) return;
-  const {proj,W,H,padL,padR,N,x,y}=projCtx;
+  const {years,series,W,H,padL,padR,N,x,y}=projCtx;
   function move(clientX){
     const rect=svg.getBoundingClientRect();
     const ux=(clientX-rect.left)/rect.width*W;
     let i=Math.round((ux-padL)/Math.max(1,(W-padL-padR))*(N-1));
     i=Math.max(0,Math.min(N-1,i));
-    const px=x(i), pyP=y(proj.patrimoine[i]), pyC=y(proj.cfCumulAI[i]);
+    const px=x(i);
     cross.style.opacity=1;
     line.setAttribute('x1',px); line.setAttribute('x2',px);
-    dp.setAttribute('cx',px); dp.setAttribute('cy',pyP);
-    dc.setAttribute('cx',px); dc.setAttribute('cy',pyC);
+    let rows="", topY=H;
+    series.forEach((s,si)=>{
+      const v=s.values[i], py=y(v);
+      topY=Math.min(topY,py);
+      const d=document.getElementById('ch-d'+si);
+      if(d){ d.setAttribute('cx',px); d.setAttribute('cy',py); }
+      rows+=`<div class="tt-row"><span class="tt-dot" style="background:${s.color}"></span><b>${eurSigned(v)}</b> · ${s.nom}</div>`;
+    });
     tip.style.opacity=1;
     tip.style.left=(px/W*rect.width)+'px';
-    tip.style.top=(Math.min(pyP,pyC)/H*rect.height)+'px';
-    tip.innerHTML=`<div class="tt-year">Année ${proj.years[i]}</div>`+
-      `<div class="tt-row"><b>${eur(proj.patrimoine[i])}</b> patrimoine net</div>`+
-      `<div class="tt-row"><b>${eurSigned(proj.cfCumulAI[i])}</b> cash-flow cumulé</div>`;
+    tip.style.top=(topY/H*rect.height)+'px';
+    tip.innerHTML=`<div class="tt-year">Année ${years[i]}</div>${rows}`;
   }
   holder.addEventListener('mousemove', e=>move(e.clientX));
   holder.addEventListener('touchmove', e=>{ if(e.touches[0]){ move(e.touches[0].clientX); } }, {passive:true});
   holder.addEventListener('mouseleave', ()=>{ cross.style.opacity=0; tip.style.opacity=0; });
+}
+
+function renderRegimeLegend(selRegimes){
+  const host=document.getElementById('regime-legend'); if(!host) return;
+  host.innerHTML = Object.entries(REGIMES).map(([k,v])=>{
+    const checked=selRegimes.includes(k), col=REGIME_COLORS[k];
+    return `<label class="rchip ${checked?'checked':''}" style="--rc:${col}">
+      <input type="checkbox" data-regime-chip="${k}" ${checked?'checked':''}>
+      <span class="dot" style="background:${col}"></span>${v.nom}</label>`;
+  }).join("");
+  host.querySelectorAll('[data-regime-chip]').forEach(cb=>{
+    cb.addEventListener('change',()=>{
+      let sel=(state.projRegimes&&state.projRegimes.length)?[...state.projRegimes]:[state.regime];
+      const k=cb.dataset.regimeChip;
+      if(cb.checked){ if(!sel.includes(k)) sel.push(k); } else { sel=sel.filter(x=>x!==k); }
+      if(!sel.length) sel=[state.regime];
+      state.projRegimes=sel; save(); render();
+    });
+  });
 }
 
 function kFmt(v){
@@ -1373,6 +1423,9 @@ document.querySelectorAll(".tab[data-tab]").forEach(t=>t.addEventListener("click
   if(tab==="compta") renderCompta();
 }));
 document.querySelectorAll(".step").forEach(b=>b.addEventListener("click",()=>showStep(b.dataset.sec)));
+document.querySelectorAll('#metric-toggle button').forEach(b=>b.addEventListener("click",()=>{
+  state.projMetric=b.dataset.metric; save(); render();
+}));
 
 /* =========================================================================
    INIT
