@@ -83,7 +83,7 @@
   @media(max-width:960px){ .wrap{grid-template-columns:1fr;} }
 
   /* ---- INPUTS (stepper) ---- */
-  .inputs{border-right:1px solid var(--border-subtle); background:var(--panel); min-height:100vh;}
+  .inputs{border-right:1px solid var(--border-subtle); background:var(--panel); min-height:100vh; min-width:0;}
   @media(max-width:960px){ .inputs{border-right:none; border-bottom:1px solid var(--border-subtle);} }
   .steps{display:flex; align-items:flex-start; padding:22px 20px 18px; position:sticky; top:60px;
     background:var(--panel); z-index:10; border-bottom:1px solid var(--border-subtle); overflow-x:auto;}
@@ -141,7 +141,7 @@
   .switch input:focus-visible + .slider{outline:2px solid var(--accent); outline-offset:2px;}
 
   /* ---- RESULTS ---- */
-  .results{padding:24px 32px 64px; position:sticky; top:60px; align-self:start;}
+  .results{padding:24px 32px 64px; position:sticky; top:60px; align-self:start; min-width:0;}
   @media(max-width:960px){ .results{position:static;} }
 
   .actions{display:flex; gap:8px; margin-bottom:18px; flex-wrap:wrap;}
@@ -232,15 +232,30 @@
   table.breakdown tr.total td:last-child{color:var(--text-primary);}
   table.breakdown tr.sub td{color:var(--text-secondary);}
 
-  .regime-bars{display:flex; flex-direction:column; gap:10px; margin-top:2px;}
-  .rbar{display:grid; grid-template-columns:136px 1fr 64px; align-items:center; gap:10px; font-size:var(--fs-sm);}
-  .rbar .rlab{color:var(--text-secondary); display:flex; align-items:center; gap:7px;}
-  .rbar .rlab::before{content:""; width:7px; height:7px; border-radius:50%; background:var(--rc,var(--text-tertiary)); flex:none;}
-  .rbar.active .rlab{color:var(--text-primary); font-weight:600;}
-  .rbar .track{height:20px; background:var(--surface-2); border-radius:var(--radius-xs); position:relative; overflow:hidden;}
-  .rbar .fill{height:100%; border-radius:var(--radius-xs); transition:width var(--dur-3) var(--ease); background:var(--rc,var(--accent));}
-  .rbar .neg-fill{background:var(--negative)!important;}
-  .rbar .rval{text-align:right; font-family:var(--font); font-variant-numeric:tabular-nums; font-weight:600;}
+  /* --- Tableau comparatif des régimes --- */
+  .cmp-scroll{overflow-x:auto; margin:0 -2px;}
+  table.cmp-table{width:100%; border-collapse:collapse; font-size:var(--fs-sm); min-width:600px;}
+  table.cmp-table th{text-align:right; font-size:11px; font-weight:600; color:var(--text-tertiary);
+    text-transform:uppercase; letter-spacing:.04em; padding:0 18px 10px 0; border-bottom:1px solid var(--border-default); white-space:nowrap;}
+  table.cmp-table th:first-child{text-align:left;}
+  table.cmp-table th:last-child, table.cmp-table td:last-child{padding-right:0;}
+  table.cmp-table td{padding:13px 18px 13px 0; border-bottom:1px solid var(--border-subtle); text-align:right;}
+  table.cmp-table td:first-child{text-align:left;}
+  table.cmp-table tbody tr:last-child td{border-bottom:none;}
+  .cmp-row{cursor:pointer; transition:background var(--dur-1) var(--ease);}
+  .cmp-row:hover{background:var(--surface-2);}
+  .cmp-row.active{background:color-mix(in srgb, var(--rc) 6%, transparent);}
+  .cmp-regime{display:flex; align-items:center; gap:9px; font-weight:500; color:var(--text-secondary);}
+  .cmp-row.active .cmp-regime{color:var(--text-primary); font-weight:600;}
+  .cmp-regime .dot{width:8px; height:8px; border-radius:50%; background:var(--rc); flex:none;}
+  .cmp-table .num{font-family:var(--font); font-variant-numeric:tabular-nums; color:var(--text-primary);}
+  .cmp-table .num.neg{color:var(--negative);}
+  .cmp-tri{display:flex; align-items:center; justify-content:flex-end; gap:10px;}
+  .cmp-tri .mini-bar{width:64px; height:6px; background:var(--surface-2); border-radius:99px; overflow:hidden; flex:none;}
+  .cmp-tri .fill{height:100%; border-radius:99px; background:var(--rc,var(--accent)); transition:width var(--dur-3) var(--ease);}
+  .cmp-tri .fill.neg-fill{background:var(--negative);}
+  .cmp-tri .num.best{color:var(--accent); font-weight:700;}
+  @media(max-width:640px){ .cmp-tri .mini-bar{display:none;} }
 
   .note{font-size:12px; color:var(--text-secondary); line-height:1.6;
     padding:13px 15px; background:var(--surface-2); border-radius:var(--radius-md);}
@@ -458,7 +473,6 @@
 
     <div class="tabbar" id="result-tabbar">
       <button type="button" class="tab active" data-tab="overview">Vue d'ensemble</button>
-      <button type="button" class="tab" data-tab="projection">Projection</button>
       <button type="button" class="tab" data-tab="comparaison">Comparaison</button>
       <button type="button" class="tab" data-tab="detail">Détail</button>
       <button type="button" class="tab" data-tab="compta">Comptabilité</button>
@@ -477,9 +491,15 @@
 
     </div><!-- /overview -->
 
-    <div data-tabpanel="projection" style="display:none">
+    <div data-tabpanel="comparaison" style="display:none">
     <div class="card">
-      <h3><svg><use href="#i-trending-up"/></svg>Projection dans le temps</h3>
+      <h3><svg><use href="#i-bar-chart"/></svg>Comparaison des régimes</h3>
+      <p class="csub">Clique une ligne pour basculer l'app sur ce régime — le régime actif est mis en avant.</p>
+      <div id="cmp-table"></div>
+      <div class="note" id="regime-note"></div>
+    </div>
+    <div class="card">
+      <h3><svg><use href="#i-trending-up"/></svg>Évolution dans le temps</h3>
       <p class="csub" id="proj-sub"></p>
       <div class="proj-controls">
         <div class="metric-toggle" id="metric-toggle">
@@ -489,15 +509,6 @@
         <div class="regime-legend" id="regime-legend"></div>
       </div>
       <div id="chart-proj"></div>
-    </div>
-    </div><!-- /projection -->
-
-    <div data-tabpanel="comparaison" style="display:none">
-    <div class="card">
-      <h3><svg><use href="#i-bar-chart"/></svg>Comparaison des régimes</h3>
-      <p class="csub">TRI net (revente incluse) selon le mode de détention — le régime actif est mis en avant.</p>
-      <div class="regime-bars" id="regime-cmp"></div>
-      <div class="note" id="regime-note"></div>
     </div>
     </div><!-- /comparaison -->
 
@@ -869,7 +880,8 @@ function compute(s){
     const pr = projectRegime(s, rk, {sched:schedK, chargesFixes, gestionPct:s.gestionPct, gliPct:s.gliPct,
       loyerBrutAnnuel, occupancy, amortBien, amortTravaux, amortMobilier:amortMobK, coutTotal:coutK, fraisNotaire});
     regimeResults[rk]={tri:pr.tri, cfCumulAI:pr.cfCumulAI[pr.cfCumulAI.length-1], netRevente:pr.netRevente,
-      years:pr.years, patrimoine:pr.patrimoine, cfCumulSeries:pr.cfCumulAI};
+      years:pr.years, patrimoine:pr.patrimoine, cfCumulSeries:pr.cfCumulAI,
+      coutTotal:coutK, rendementNet:(rentEncaisse-chargesExpl)/coutK*100};
   }
 
   return {
@@ -986,6 +998,11 @@ function stepNav(sec){
     ${next?`<button type="button" class="btn primary" data-goto="${next}">${STEP_LABELS[next]}<svg class="icon"><use href="#i-chevron-right"/></svg></button>`:'<span></span>'}
   </div>`;
 }
+function setRegime(k){
+  state.regime=k; save();
+  document.querySelectorAll('.regime-opt').forEach(o=>o.classList.toggle('active', o.dataset.regime===k));
+  render();
+}
 function playPanelEnter(el){
   if(!el) return;
   el.classList.remove('panel-enter'); void el.offsetWidth; el.classList.add('panel-enter');
@@ -1084,11 +1101,7 @@ function buildForm(){
     });
   });
   document.querySelectorAll('.regime-opt').forEach(opt=>{
-    opt.addEventListener('click',()=>{
-      state.regime=opt.dataset.regime; save();
-      document.querySelectorAll('.regime-opt').forEach(o=>o.classList.toggle('active', o.dataset.regime===state.regime));
-      render();
-    });
+    opt.addEventListener('click',()=>{ setRegime(opt.dataset.regime); });
   });
   document.querySelectorAll('[data-goto]').forEach(b=>{
     b.addEventListener('click',()=>showStep(b.dataset.goto));
@@ -1144,7 +1157,7 @@ function render(){
   renderRegimeLegend(selRegimes);
 
   // ---- Comparaison régimes ----
-  renderRegimeCompare(c);
+  renderComparisonTable(c);
 
   // ---- Détail ----
   renderBreakdown(c);
@@ -1155,21 +1168,32 @@ function render(){
   if(tc && tc.style.display!=="none") renderCompta();
 }
 
-function renderRegimeCompare(c){
-  const entries = Object.entries(c.regimeResults).map(([k,v])=>({k, nom:REGIMES[k].nom, tri:v.tri}));
-  const vals = entries.map(e=>isNaN(e.tri)?0:e.tri);
-  const maxAbs = Math.max(1, ...vals.map(Math.abs));
-  let html="";
-  for(const e of entries){
+function renderComparisonTable(c){
+  const entries = Object.entries(c.regimeResults).map(([k,v])=>({k, nom:REGIMES[k].nom, ...v}));
+  const maxAbsTri = Math.max(1, ...entries.map(e=>isNaN(e.tri)?0:Math.abs(e.tri)));
+  const bestTri = Math.max(...entries.map(e=>isNaN(e.tri)?-Infinity:e.tri));
+
+  const rows = entries.map(e=>{
     const active = e.k===state.regime;
     const t = isNaN(e.tri)?0:e.tri;
-    const w = Math.min(100, Math.abs(t)/maxAbs*100);
-    html += `<div class="rbar ${active?'active':''}" style="--rc:${REGIME_COLORS[e.k]}">
-      <span class="rlab">${e.nom}</span>
-      <div class="track"><div class="fill ${t<0?'neg-fill':''}" style="width:${w}%"></div></div>
-      <span class="rval ${t<0?'neg':''}">${isNaN(e.tri)?'—':pct(t,1)}</span></div>`;
-  }
-  document.getElementById("regime-cmp").innerHTML = html;
+    const w = Math.min(100, Math.abs(t)/maxAbsTri*100);
+    return `<tr class="cmp-row ${active?'active':''}" data-regime="${e.k}" style="--rc:${REGIME_COLORS[e.k]}">
+      <td class="cmp-regime"><span class="dot"></span>${e.nom}</td>
+      <td class="num">${pct(e.rendementNet,1)}</td>
+      <td class="num ${e.cfCumulAI<0?'neg':''}">${eurSigned(e.cfCumulAI)}</td>
+      <td class="num">${eur(e.netRevente)}</td>
+      <td class="cmp-tri">
+        <div class="mini-bar"><div class="fill ${t<0?'neg-fill':''}" style="width:${w}%"></div></div>
+        <span class="num ${t<0?'neg':''} ${!isNaN(e.tri)&&e.tri===bestTri?'best':''}">${isNaN(e.tri)?'—':pct(e.tri,1)}</span>
+      </td></tr>`;
+  }).join("");
+
+  document.getElementById("cmp-table").innerHTML = `<div class="cmp-scroll"><table class="cmp-table">
+    <thead><tr><th>Régime</th><th>Rendement net</th><th>Cash-flow cumulé</th><th>Produit net revente</th><th>TRI net</th></tr></thead>
+    <tbody>${rows}</tbody></table></div>`;
+  document.querySelectorAll('#cmp-table .cmp-row').forEach(row=>{
+    row.addEventListener('click',()=>setRegime(row.dataset.regime));
+  });
 
   const best = entries.filter(e=>!isNaN(e.tri)).sort((a,b)=>b.tri-a.tri)[0];
   document.getElementById("regime-note").innerHTML = best
