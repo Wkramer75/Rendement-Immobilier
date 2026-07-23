@@ -41,20 +41,25 @@
   .wrap{display:grid; grid-template-columns:minmax(360px,440px) 1fr;}
   @media(max-width:960px){ .wrap{grid-template-columns:1fr;} }
 
-  /* ---- INPUTS ---- */
+  /* ---- INPUTS (navigation par étapes) ---- */
   .inputs{border-right:1px solid var(--line); background:var(--panel); min-height:100vh;}
   @media(max-width:960px){ .inputs{border-right:none; border-bottom:1px solid var(--line);} }
-  .section{border-bottom:1px solid var(--line-soft);}
-  .section > summary{list-style:none; cursor:pointer; padding:15px 24px;
-    display:flex; align-items:center; gap:12px; user-select:none; transition:background .15s;}
-  .section > summary::-webkit-details-marker{display:none;}
-  .section > summary:hover{background:var(--line-soft);}
-  .section .eyebrow{font-family:var(--mono); font-size:11px; color:var(--brass);
+  .steps{display:flex; flex-wrap:wrap; gap:2px; padding:10px 14px 0; position:sticky; top:63px;
+    background:var(--panel); z-index:10; border-bottom:1px solid var(--line-soft);}
+  @media(max-width:960px){ .steps{position:static;} }
+  .step{list-style:none; cursor:pointer; border:none; background:transparent; font-family:var(--sans);
+    display:flex; align-items:center; gap:8px; padding:10px 12px; border-radius:9px 9px 0 0;
+    user-select:none; transition:background .15s; margin-bottom:-1px;}
+  .step:hover{background:var(--line-soft);}
+  .step.active{background:var(--line-soft); box-shadow:inset 0 -2px 0 var(--emerald);}
+  .step.active .stitle{color:var(--emerald);}
+  .step .eyebrow{font-family:var(--mono); font-size:11px; color:var(--brass);
     background:var(--brass-soft); padding:3px 7px; border-radius:6px; font-weight:600; letter-spacing:.03em;}
-  .section .stitle{font-weight:600; font-size:14.5px;}
-  .section .chev{margin-left:auto; color:var(--muted); transition:transform .2s ease; font-size:18px;}
-  .section[open] .chev{transform:rotate(90deg);}
-  .section .body{padding:2px 24px 20px;}
+  .step .stitle{font-weight:600; font-size:13px; color:var(--ink-soft); white-space:nowrap;}
+  .step-panel{padding:2px 24px 8px;}
+  .step-body{padding:14px 0 6px;}
+  .step-nav{display:flex; justify-content:space-between; gap:10px; margin-top:6px; padding-top:16px; border-top:1px solid var(--line-soft);}
+  .step-nav .btn{min-width:110px;}
 
   .field{display:grid; grid-template-columns:1fr auto; align-items:center; gap:10px 12px; padding:7px 0;}
   .field label{color:var(--ink-soft); font-size:13.5px;}
@@ -176,11 +181,12 @@
   .flag.warn{background:var(--brass-soft); color:var(--brass);}
 
   @media print{ header.top{position:static;} .results{position:static;} .inputs{display:none;}
-    .wrap{grid-template-columns:1fr;} .actions{display:none;} .kpi:hover{transform:none;} }
+    .wrap{grid-template-columns:1fr;} .actions{display:none;} .kpi:hover{transform:none;}
+    [data-tabpanel]{display:block!important;} }
 
   /* --- Onglets --- */
-  .tabbar{display:inline-flex; gap:4px; background:var(--line-soft); padding:4px; border-radius:11px; margin-bottom:18px;}
-  .tab{border:none; background:transparent; font-family:var(--sans); font-weight:600; font-size:13px; color:var(--ink-soft); padding:8px 18px; border-radius:8px; cursor:pointer; transition:.15s;}
+  .tabbar{display:inline-flex; flex-wrap:wrap; gap:4px; background:var(--line-soft); padding:4px; border-radius:11px; margin-bottom:18px;}
+  .tab{border:none; background:transparent; font-family:var(--sans); font-weight:600; font-size:13px; color:var(--ink-soft); padding:8px 16px; border-radius:8px; cursor:pointer; transition:.15s;}
   .tab:hover{color:var(--emerald);}
   .tab.active{background:var(--panel); color:var(--emerald); box-shadow:var(--shadow);}
 
@@ -261,36 +267,22 @@
 <div class="wrap">
   <!-- ============ INPUTS ============ -->
   <form class="inputs" id="form" autocomplete="off">
-
-    <details class="section" open>
-      <summary><span class="eyebrow">01</span><span class="stitle">Acquisition</span><span class="chev">›</span></summary>
-      <div class="body" id="sec-acq"></div>
-    </details>
-
-    <details class="section">
-      <summary><span class="eyebrow">02</span><span class="stitle">Financement</span><span class="chev">›</span></summary>
-      <div class="body" id="sec-fin"></div>
-    </details>
-
-    <details class="section">
-      <summary><span class="eyebrow">03</span><span class="stitle">Revenus locatifs</span><span class="chev">›</span></summary>
-      <div class="body" id="sec-rev"></div>
-    </details>
-
-    <details class="section">
-      <summary><span class="eyebrow">04</span><span class="stitle">Charges d'exploitation</span><span class="chev">›</span></summary>
-      <div class="body" id="sec-cha"></div>
-    </details>
-
-    <details class="section" open>
-      <summary><span class="eyebrow">05</span><span class="stitle">Régime & fiscalité</span><span class="chev">›</span></summary>
-      <div class="body" id="sec-fis"></div>
-    </details>
-
-    <details class="section">
-      <summary><span class="eyebrow">06</span><span class="stitle">Projection & revente</span><span class="chev">›</span></summary>
-      <div class="body" id="sec-pro"></div>
-    </details>
+    <nav class="steps" id="steps">
+      <button type="button" class="step active" data-sec="acq"><span class="eyebrow">01</span><span class="stitle">Acquisition</span></button>
+      <button type="button" class="step" data-sec="fin"><span class="eyebrow">02</span><span class="stitle">Financement</span></button>
+      <button type="button" class="step" data-sec="rev"><span class="eyebrow">03</span><span class="stitle">Revenus</span></button>
+      <button type="button" class="step" data-sec="cha"><span class="eyebrow">04</span><span class="stitle">Charges</span></button>
+      <button type="button" class="step" data-sec="fis"><span class="eyebrow">05</span><span class="stitle">Fiscalité</span></button>
+      <button type="button" class="step" data-sec="pro"><span class="eyebrow">06</span><span class="stitle">Projection</span></button>
+    </nav>
+    <div class="step-panel">
+      <div class="step-body" id="sec-acq" data-panel="acq"></div>
+      <div class="step-body" id="sec-fin" data-panel="fin" style="display:none"></div>
+      <div class="step-body" id="sec-rev" data-panel="rev" style="display:none"></div>
+      <div class="step-body" id="sec-cha" data-panel="cha" style="display:none"></div>
+      <div class="step-body" id="sec-fis" data-panel="fis" style="display:none"></div>
+      <div class="step-body" id="sec-pro" data-panel="pro" style="display:none"></div>
+    </div>
   </form>
 
   <!-- ============ RESULTS ============ -->
@@ -317,12 +309,15 @@
       <button type="button" class="btn" id="btn-print">Imprimer / PDF</button>
     </div>
 
-    <div class="tabbar">
-      <button type="button" class="tab active" data-tab="sim">Simulation</button>
+    <div class="tabbar" id="result-tabbar">
+      <button type="button" class="tab active" data-tab="overview">Vue d'ensemble</button>
+      <button type="button" class="tab" data-tab="projection">Projection</button>
+      <button type="button" class="tab" data-tab="comparaison">Comparaison</button>
+      <button type="button" class="tab" data-tab="detail">Détail</button>
       <button type="button" class="tab" data-tab="compta">Comptabilité</button>
     </div>
 
-    <div id="tab-sim">
+    <div data-tabpanel="overview">
 
     <div class="hero-panel" id="hero"></div>
     <div class="kpi-grid" id="kpis"></div>
@@ -333,6 +328,9 @@
       <div id="conseils"></div>
     </div>
 
+    </div><!-- /overview -->
+
+    <div data-tabpanel="projection" style="display:none">
     <div class="card">
       <h3>Projection sur la durée de détention</h3>
       <p class="csub" id="proj-sub"></p>
@@ -342,14 +340,18 @@
         <span class="lg"><span class="sw" style="background:var(--brass)"></span>Cash-flow cumulé après impôt</span>
       </div>
     </div>
+    </div><!-- /projection -->
 
+    <div data-tabpanel="comparaison" style="display:none">
     <div class="card">
       <h3>Comparaison des régimes</h3>
       <p class="csub">TRI net (revente incluse) selon le mode de détention — le régime actif est mis en avant.</p>
       <div class="regime-bars" id="regime-cmp"></div>
       <div class="note" id="regime-note"></div>
     </div>
+    </div><!-- /comparaison -->
 
+    <div data-tabpanel="detail" style="display:none">
     <div class="card">
       <h3>Détail du calcul</h3>
       <p class="csub" id="detail-sub"></p>
@@ -361,16 +363,15 @@
       plus-values) évoluent et dépendent de ta situation — tous les taux sont modifiables ci-contre. Fais valider
       un scénario sérieux par un expert-comptable ou un conseiller. Ceci n'est pas un conseil fiscal.
     </div>
+    </div><!-- /detail -->
 
-    </div><!-- /tab-sim -->
-
-    <div id="tab-compta" style="display:none">
+    <div data-tabpanel="compta" style="display:none">
       <div class="card">
         <h3>Comptabilité annuelle</h3>
         <p class="csub" id="compta-sub"></p>
         <div id="compta"></div>
       </div>
-    </div>
+    </div><!-- /compta -->
   </div>
 </div>
 
@@ -754,6 +755,21 @@ function num(key, label, unit, hint, step, ro){
     </div></div>`;
 }
 
+const STEP_ORDER=["acq","fin","rev","cha","fis","pro"];
+const STEP_LABELS={acq:"Acquisition",fin:"Financement",rev:"Revenus",cha:"Charges",fis:"Fiscalité",pro:"Projection"};
+function stepNav(sec){
+  const i=STEP_ORDER.indexOf(sec), prev=STEP_ORDER[i-1], next=STEP_ORDER[i+1];
+  return `<div class="step-nav">
+    ${prev?`<button type="button" class="btn" data-goto="${prev}">‹ ${STEP_LABELS[prev]}</button>`:'<span></span>'}
+    ${next?`<button type="button" class="btn primary" data-goto="${next}">${STEP_LABELS[next]} ›</button>`:'<span></span>'}
+  </div>`;
+}
+function showStep(sec){
+  document.querySelectorAll('.step').forEach(b=>b.classList.toggle('active', b.dataset.sec===sec));
+  document.querySelectorAll('.step-body').forEach(p=>{ p.style.display = p.dataset.panel===sec ? '' : 'none'; });
+  const scroller=document.querySelector('.inputs'); if(scroller) scroller.scrollTop=0;
+}
+
 function buildForm(){
   document.getElementById("sec-acq").innerHTML =
     num("prixAchat","Prix d'achat du bien","€")+
@@ -763,13 +779,15 @@ function buildForm(){
     num("fraisGarantie","Garantie (hypothèque / caution)","€")+
     num("travaux","Coût des travaux","€")+
     num("ameublement","Ameublement","€","pris en compte si location meublée")+
-    num("diagnostics","Diagnostics obligatoires","€");
+    num("diagnostics","Diagnostics obligatoires","€")+
+    stepNav("acq");
 
   document.getElementById("sec-fin").innerHTML =
     num("montantEmprunt","Montant de l'emprunt","€","le reste = apport personnel")+
     num("dureePret","Durée du prêt","ans","",1)+
     num("tauxInteret","Taux d'intérêt","%","",0.05)+
-    num("tauxAssurance","Assurance emprunteur","%","% du capital / an",0.01);
+    num("tauxAssurance","Assurance emprunteur","%","% du capital / an",0.01)+
+    stepNav("fin");
 
   document.getElementById("sec-rev").innerHTML =
     num("loyerHC","Loyer mensuel hors charges","€")+
@@ -777,7 +795,8 @@ function buildForm(){
     num("chargesRecup","Charges récupérables","€","refacturées au locataire, neutre")+
     num("vacanceMois","Vacance locative","mois","mois sans locataire / an",0.5)+
     num("tauxImpayes","Taux d'impayés estimé","%","",0.5)+
-    num("revalLoyer","Revalorisation du loyer","%","par an (IRL)",0.1);
+    num("revalLoyer","Revalorisation du loyer","%","par an (IRL)",0.1)+
+    stepNav("rev");
 
   document.getElementById("sec-cha").innerHTML =
     num("coproNonRecup","Copropriété non récupérable","€","/ an")+
@@ -795,7 +814,8 @@ function buildForm(){
     num("gliPct","Assurance loyers impayés","%","% du loyer",0.5)+
     num("protectionJuri","Protection juridique","€","/ an")+
     num("cfe","CFE","€","/ an · si applicable")+
-    num("inflationCharges","Inflation des charges","%","par an",0.1);
+    num("inflationCharges","Inflation des charges","%","par an",0.1)+
+    stepNav("cha");
 
   // Régime
   let rg = `<div class="regime-grid">`;
@@ -811,7 +831,8 @@ function buildForm(){
     num("partTerrain","Part du terrain","%","non amortissable · LMNP réel / SCI",1)+
     num("amortBienDuree","Amortissement du bâti","ans","",1)+
     num("amortTravauxDuree","Amortissement travaux","ans","",1)+
-    num("amortMobilierDuree","Amortissement mobilier","ans","",1);
+    num("amortMobilierDuree","Amortissement mobilier","ans","",1)+
+    stepNav("fis");
 
   document.getElementById("sec-pro").innerHTML =
     num("dureeDetention","Durée de détention","ans","horizon de revente",1)+
@@ -819,7 +840,8 @@ function buildForm(){
     num("valeurReventeOverride","Valeur de revente forcée","€","0 = calcul auto")+
     num("fraisReventePct","Frais de revente","%","agence + diagnostics",0.5)+
     `<div class="toggle-row"><label class="switch"><input type="checkbox" data-key="reintegrationAmort" ${state.reintegrationAmort?'checked':''}><span class="slider"></span></label>
-      <label>Réintégrer les amortissements à la plus-value (LMNP réel, règle 2025)</label></div>`;
+      <label>Réintégrer les amortissements à la plus-value (LMNP réel, règle 2025)</label></div>`+
+    stepNav("pro");
 
   // listeners
   document.querySelectorAll('input[data-key]').forEach(inp=>{
@@ -837,6 +859,9 @@ function buildForm(){
       document.querySelectorAll('.regime-opt').forEach(o=>o.classList.toggle('active', o.dataset.regime===state.regime));
       render();
     });
+  });
+  document.querySelectorAll('[data-goto]').forEach(b=>{
+    b.addEventListener('click',()=>showStep(b.dataset.goto));
   });
 }
 
@@ -889,7 +914,7 @@ function render(){
 
   // ---- Conseils + Comptabilité ----
   renderConseils(c);
-  const tc=document.getElementById("tab-compta");
+  const tc=document.querySelector('[data-tabpanel="compta"]');
   if(tc && tc.style.display!=="none") renderCompta();
 }
 
@@ -1341,13 +1366,13 @@ document.getElementById("proj-del").addEventListener("click",deleteProject);
 document.getElementById("proj-export").addEventListener("click",exportProjects);
 document.getElementById("proj-import").addEventListener("click",()=>document.getElementById("proj-file").click());
 document.getElementById("proj-file").addEventListener("change",e=>{ if(e.target.files&&e.target.files[0]){ importProjects(e.target.files[0]); e.target.value=""; } });
-document.querySelectorAll(".tab").forEach(t=>t.addEventListener("click",()=>{
-  document.querySelectorAll(".tab").forEach(x=>x.classList.toggle("active",x===t));
+document.querySelectorAll(".tab[data-tab]").forEach(t=>t.addEventListener("click",()=>{
+  document.querySelectorAll(".tab[data-tab]").forEach(x=>x.classList.toggle("active",x===t));
   const tab=t.dataset.tab;
-  document.getElementById("tab-sim").style.display = tab==="sim"?"":"none";
-  document.getElementById("tab-compta").style.display = tab==="compta"?"":"none";
+  document.querySelectorAll("[data-tabpanel]").forEach(p=>{ p.style.display = p.dataset.tabpanel===tab ? "" : "none"; });
   if(tab==="compta") renderCompta();
 }));
+document.querySelectorAll(".step").forEach(b=>b.addEventListener("click",()=>showStep(b.dataset.sec)));
 
 /* =========================================================================
    INIT
