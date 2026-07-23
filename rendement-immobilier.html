@@ -166,8 +166,12 @@
 
   /* hero */
   .hero-panel{background:var(--surface-inverse); color:#fff; border-radius:var(--radius-xl);
-    padding:22px 26px; margin-bottom:16px; border-top:2px solid var(--brass-2);
-    display:grid; grid-template-columns:1.15fr 1fr 1fr; gap:6px; position:relative;}
+    padding:20px 26px 22px; margin-bottom:16px; border-top:2px solid var(--brass-2); position:relative;}
+  .hero-badge{--rc:var(--brass-2); display:inline-flex; align-items:center; gap:7px; font-size:11px; font-weight:600;
+    letter-spacing:.02em; color:var(--text-on-inverse-soft); background:rgba(255,255,255,.08);
+    padding:5px 11px 5px 9px; border-radius:var(--radius-full); margin-bottom:16px;}
+  .hero-badge::before{content:""; width:6px; height:6px; border-radius:50%; background:var(--rc); flex:none;}
+  .hero-stats{display:grid; grid-template-columns:1.15fr 1fr 1fr; gap:6px;}
   .hero-stat{position:relative; z-index:1; padding:2px 22px; border-left:1px solid rgba(255,255,255,.10);}
   .hero-stat:first-child{border-left:none; padding-left:2px;}
   .hero-stat .hl{font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:var(--text-on-inverse-soft); font-weight:600;}
@@ -175,7 +179,7 @@
     letter-spacing:-.02em; line-height:var(--lh-2xl); margin-top:4px; display:block;}
   .hero-stat .hs{font-size:11.5px; color:var(--text-on-inverse-soft); margin-top:2px; display:block;}
   .hero-panel .pos{color:#7FE0B8;} .hero-panel .neg{color:#F2A98F;} .hero-panel .brass{color:var(--brass-2);}
-  @media(max-width:640px){ .hero-panel{grid-template-columns:1fr;}
+  @media(max-width:640px){ .hero-stats{grid-template-columns:1fr;}
     .hero-stat{border-left:none; border-top:1px solid rgba(255,255,255,.10); padding:12px 2px;}
     .hero-stat:first-child{border-top:none;} }
 
@@ -1111,13 +1115,15 @@ function render(){
   const cfCls = c.cfMensuel>=0?"pos":"neg";
   const tri = c.regimeResults[state.regime].tri;
   document.getElementById("hero").innerHTML =
-    `<div class="hero-badge">${REGIMES[state.regime].nom}</div>`+
+    `<div class="hero-badge" style="--rc:${REGIME_COLORS[state.regime]}">${REGIMES[state.regime].nom}</div>`+
+    `<div class="hero-stats">`+
     heroStat(`TRI sur ${c.N} ans`, isNaN(tri)?"—":pct(tri), tri>=0?"pos":"neg",
       `Fonds propres ${pct(c.cashOnCash)} · revente incluse`)+
     heroStat("Cash-flow mensuel", eurSigned(c.cfMensuel), cfCls,
       `${eurSigned(c.cfApresImpotAn)} / an après impôt`)+
     heroStat("Rentab. nette après impôts", pct(c.rendementNetNet), "brass",
-      "après charges & fiscalité");
+      "après charges & fiscalité")+
+    `</div>`;
   document.getElementById("kpis").innerHTML =
     kpiCard({label:"Coût total du projet", val:eur(c.coutTotal),
       sub:`Apport ${eur(c.apport)}${c.apport<0?' <span class="flag warn">sur-financé</span>':''}`})+
