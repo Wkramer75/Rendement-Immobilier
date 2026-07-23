@@ -1,0 +1,6 @@
+﻿# Colle ici l'adresse (URL brute) de ton fichier rendement-immobilier.html en ligne.
+# Exemple GitHub : https://raw.githubusercontent.com/PSEUDO/DEPOT/main/rendement-immobilier.html
+# Tant que cette ligne reste vide ou commence par #, l'appli se lance sans mise a jour.
+#
+# >>> Remplace la ligne ci-dessous par TON adresse (retire le # du debut) :
+#https://raw.githubusercontent.com/...
